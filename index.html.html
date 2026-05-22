@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toma Física de Inventario – CD PPAL</title>
+<style>
+  :root {
+    --green: #1a6b3c;
+    --green-light: #e8f5ee;
+    --green-mid: #2e8b57;
+    --accent: #f0a500;
+    --accent-light: #fff8e6;
+    --red: #c0392b;
+    --gray: #6b7280;
+    --bg: #f4f6f8;
+    --white: #ffffff;
+    --border: #d1d5db;
+    --shadow: 0 2px 8px rgba(0,0,0,0.10);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: var(--bg); color: #1f2937; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--green);
+    color: white;
+    padding: 18px 28px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    position: sticky; top: 0; z-index: 100;
+  }
+  header .logo { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: 700; line-height: 1.2; }
+  header h1 span { font-size: 13px; font-weight: 400; opacity: 0.85; display: block; }
+  header .fecha { margin-left: auto; font-size: 13px; text-align: right; opacity: 0.85; }
+
+  /* MAIN */
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 40px; }
+
+  /* CONFIG PANEL */
+  .config-panel {
+    background: white; border-radius: var(--radius); padding: 20px 24px;
+    box-shadow: var(--shadow); margin-bottom: 22px; border-left: 4px solid var(--accent);
+  }
+  .config-panel h2 { font-size: 14px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+  .config-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .config-row .field { flex: 1; min-width: 180px; }
+
+  /* FORM PANEL */
+  .form-panel {
+    background: white; border-radius: var(--radius); padding: 22px 24px;
+    box-shadow: var(--shadow); margin-bottom: 22px;
+  }
+  .form-panel h2 { font-size: 15px; font-weight: 700; color: var(--green); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+    border-radius: 7px; font-size: 14px; background: white; color: #1f2937;
+    transition: border .2s;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--green); }
+  .field input[readonly] { background: var(--green-light); font-weight: 600; color: var(--green); }
+  .field input.highlight { background: var(--accent-light); border-color: var(--accent); }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .btn { padding: 10px 20px; border: none; border-radius: 7px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform .1s, opacity .2s; }
+  .btn:hover { opacity: .88; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-secondary { background: var(--accent); color: white; }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-outline { background: white; color: var(--green); border: 2px solid var(--green); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* NUEVO ARTICULO */
+  .nuevo-badge { background: var(--accent); color: white; font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 700; }
+
+  /* TABLE */
+  .table-panel { background: white; border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow); }
+  .table-panel h2 { font-size: 15px; font-weight: 700; color: var(--green); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--green); color: white; padding: 10px 12px;
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #f0f0f0; transition: background .15s; }
+  tbody tr:hover { background: var(--green-light); }
+  tbody tr.nuevo-row { background: var(--accent-light); }
+  tbody td { padding: 9px 12px; vertical-align: middle; }
+  tbody td:nth-child(1) { font-weight: 700; color: var(--green); }
+  .tag-nuevo { background: var(--accent); color: white; font-size: 10px; padding: 1px 6px; border-radius: 20px; font-weight: 700; margin-left: 4px; }
+
+  /* TOTALS ROW */
+  .totals-row { background: #1a6b3c !important; color: white !important; font-weight: 700; }
+  .totals-row td { color: white !important; padding: 10px 12px; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 40px 20px; color: var(--gray); }
+  .empty .icon { font-size: 40px; margin-bottom: 8px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: var(--radius); padding: 28px; width: 90%; max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,.25); }
+  .modal h3 { font-size: 17px; font-weight: 700; color: var(--green); margin-bottom: 18px; }
+  .modal .actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,.2); transform: translateY(80px); opacity: 0; transition: all .3s; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* SUMMARY CHIPS */
+  .summary-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+  .chip-green { background: var(--green-light); color: var(--green); }
+  .chip-amber { background: var(--accent-light); color: #b45309; }
+
+  @media (max-width: 600px) {
+    header h1 { font-size: 15px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* QR SCANNER */
+  .qr-btn { background: var(--green); color: white; border: none; border-radius: 7px; padding: 7px 14px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-left: auto; transition: background .2s; }
+  .qr-btn:hover { background: var(--green-mid); }
+  .qr-modal { max-width: 440px; }
+  .qr-preview { width: 100%; border-radius: 10px; overflow: hidden; background: #111; aspect-ratio: 1; position: relative; max-height: 300px; }
+  .qr-preview video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .qr-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .qr-frame { width: 55%; height: 55%; border: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,.5); animation: pulse-frame 1.5s ease-in-out infinite; }
+  @keyframes pulse-frame { 0%,100%{border-color:var(--accent);} 50%{border-color:#fff;} }
+  .qr-status { text-align: center; font-size: 13px; color: var(--gray); margin-top: 8px; min-height: 20px; font-weight: 600; }
+  .qr-status.ok { color: var(--green); }
+  .qr-status.err { color: var(--red); }
+  .qr-result-box { background: var(--green-light); border: 1.5px solid var(--green); border-radius: 8px; padding: 12px 14px; margin-top: 12px; display: none; }
+  .qr-field { display: flex; justify-content: space-between; align-items: flex-start; padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,.07); gap: 8px; }
+  .qr-field:last-child { border-bottom: none; }
+  .qr-label { color: var(--gray); font-weight: 700; text-transform: uppercase; font-size: 10px; white-space: nowrap; }
+  .qr-val { color: var(--green); font-weight: 700; font-size: 12px; text-align: right; word-break: break-word; }
+  .qr-manual-wrap { margin-top: 12px; }
+  .qr-manual-wrap label { font-size: 11px; font-weight: 700; color: var(--gray); display: block; margin-bottom: 4px; text-transform: uppercase; }
+  .qr-manual-wrap textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 7px; padding: 8px 10px; font-size: 12px; font-family: monospace; resize: vertical; min-height: 80px; }
+  .qr-tabs { display: flex; gap: 0; margin-bottom: 14px; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .qr-tab { flex: 1; padding: 8px; font-size: 13px; font-weight: 700; border: none; background: white; color: var(--gray); cursor: pointer; transition: all .2s; }
+  .qr-tab.active { background: var(--green); color: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📦</div>
+  <div>
+    <h1>Toma Física de Inventario
+      <span>CD PRINCIPAL – BCCPAL 2026</span>
+    </h1>
+  </div>
+  <div class="fecha" id="fechaHeader">–</div>
+</header>
+
+<main>
+
+  <!-- CONFIGURACIÓN -->
+  <div class="config-panel">
+    <h2>⚙️ Configuración del conteo</h2>
+    <div class="config-row">
+      <div class="field">
+        <label>Fecha del conteo</label>
+        <input type="date" id="fechaConteo">
+      </div>
+      <div class="field">
+        <label>Responsable</label>
+        <input type="text" id="responsable" placeholder="Nombre del contador">
+      </div>
+      <div class="field">
+        <label>Correo destino</label>
+        <input type="email" id="correoDestino" placeholder="inventario@empresa.com">
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO DE INGRESO -->
+  <div class="form-panel">
+    <h2>➕ Registrar posición <span class="nuevo-badge" id="badge-nuevo" style="display:none">NUEVO ARTÍCULO</span>
+      <button class="qr-btn" onclick="abrirQR()" title="Escanear código QR de la importación">📷 Escanear QR</button>
+    </h2>
+    <div class="form-grid">
+      <div class="field">
+        <label>Posición *</label>
+        <input type="text" id="posicion" placeholder="Ej: A-01-03" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="field">
+        <label>Proveedor *</label>
+        <select id="proveedor">
+          <option value="">-- Seleccione proveedor --</option>
+          <option value="0501 - DOLE CHILE">0501 - DOLE CHILE</option>
+          <option value="0502 - DOLE ITALIA">0502 - DOLE ITALIA</option>
+          <option value="0503 - AGROFRUTA S.A">0503 - AGROFRUTA S.A</option>
+          <option value="0504 - SFC COMERCIAL CHILE">0504 - SFC COMERCIAL CHILE</option>
+          <option value="0505 - DAVID DEL CURTO">0505 - DAVID DEL CURTO</option>
+          <option value="0507 - BLUE WHALE">0507 - BLUE WHALE</option>
+          <option value="0511 - STEMILT">0511 - STEMILT</option>
+          <option value="0513 - DUCKWALL">0513 - DUCKWALL</option>
+          <option value="0514 - TIFANETTE">0514 - TIFANETTE</option>
+          <option value="0530 - RK GROWERS SRL">0530 - RK GROWERS SRL</option>
+          <option value="0531 - CMX CHILE SPA">0531 - CMX CHILE SPA</option>
+          <option value="0534 - FRUTERA INTERNACIONAL">0534 - FRUTERA INTERNACIONAL</option>
+          <option value="0544 - MITEXPORT SpA">0544 - MITEXPORT SpA</option>
+          <option value="0550 - AGROFRUTA FRESH">0550 - AGROFRUTA FRESH</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Lote *</label>
+        <input type="text" id="lote" placeholder="Ej: L-2026-001" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="field">
+        <label>Tipo de producto *</label>
+        <select id="tipoProd" onchange="onTipoProdChange()">
+          <option value="">-- Seleccione --</option>
+          <option value="catalogo">Del catálogo</option>
+          <option value="nuevo">Artículo nuevo</option>
+        </select>
+      </div>
+      <div class="field" id="wrap-variedad">
+        <label>Variedad *</label>
+        <select id="variedad" onchange="onVariedadChange()">
+          <option value="">-- Seleccione variedad --</option>
+        </select>
+      </div>
+      <div class="field" id="wrap-variedad-libre" style="display:none">
+        <label>Variedad (libre) *</label>
+        <input type="text" id="variedadLibre" placeholder="Ej: 0299 - MANDARINA">
+      </div>
+      <div class="field" id="wrap-calibre">
+        <label>Calibre *</label>
+        <select id="calibre" onchange="onCalibreChange()">
+          <option value="">-- Seleccione calibre --</option>
+        </select>
+      </div>
+      <div class="field" id="wrap-calibre-libre" style="display:none">
+        <label>Calibre (libre) *</label>
+        <input type="text" id="calibreLibre" placeholder="Ej: 0440 - CALIBRE 110">
+      </div>
+      <div class="field" id="wrap-categoria">
+        <label>Categoría *</label>
+        <select id="categoria" onchange="onCategoriaChange()">
+          <option value="">-- Seleccione categoría --</option>
+        </select>
+      </div>
+      <div class="field" id="wrap-categoria-libre" style="display:none">
+        <label>Categoría (libre) *</label>
+        <input type="text" id="categoriaLibre" placeholder="Ej: 0302 - EXTRAFANCY">
+      </div>
+      <div class="field">
+        <label>Cajas x Pallet</label>
+        <input type="number" id="cajasXPallet" readonly placeholder="Auto" class="">
+      </div>
+      <div class="field">
+        <label>Cantidad de Cajas *</label>
+        <input type="number" id="cantCajas" min="0" placeholder="0" oninput="calcPallets()">
+      </div>
+      <div class="field">
+        <label>Pallets (calculado)</label>
+        <input type="number" id="cantPallets" readonly placeholder="Auto" step="0.01">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="agregarFila()">✅ Agregar al conteo</button>
+      <button class="btn btn-outline" onclick="limpiarForm()">🔄 Limpiar</button>
+    </div>
+  </div>
+
+  <!-- TABLA DE CONTEO -->
+  <div class="table-panel">
+    <h2>📋 Registro de conteo</h2>
+    <div class="summary-bar">
+      <div class="chip chip-green">📦 Posiciones: <span id="cnt-pos">0</span></div>
+      <div class="chip chip-green">📦 Total cajas: <span id="cnt-cajas">0</span></div>
+      <div class="chip chip-green">🟦 Total pallets: <span id="cnt-pallets">0</span></div>
+      <div class="chip chip-amber">⭐ Nuevos artículos: <span id="cnt-nuevos">0</span></div>
+    </div>
+    <div class="table-wrap">
+      <table id="tablaConteo">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Posición</th>
+            <th>Proveedor</th>
+            <th>Lote</th>
+            <th>Variedad</th>
+            <th>Calibre</th>
+            <th>Categoría</th>
+            <th>Cj/Plt</th>
+            <th>Cajas</th>
+            <th>Pallets</th>
+            <th>Tipo</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="12" class="empty"><div class="icon">📋</div>No hay registros aún. Agregue la primera posición.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="abrirModalEnvio()">📧 Enviar por correo</button>
+      <button class="btn btn-outline" onclick="exportarCSV()">⬇️ Exportar Excel</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmarLimpiar()">🗑️ Limpiar todo</button>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL QR SCANNER -->
+<div class="modal-overlay" id="modalQR">
+  <div class="modal qr-modal">
+    <h3>📷 Escanear QR de Importación</h3>
+
+    <!-- TABS -->
+    <div class="qr-tabs">
+      <button class="qr-tab active" id="tab-cam" onclick="switchQRTab('cam')">📷 Cámara</button>
+      <button class="qr-tab" id="tab-texto" onclick="switchQRTab('texto')">⌨️ Pegar texto</button>
+    </div>
+
+    <!-- PANEL CÁMARA -->
+    <div id="panel-cam">
+      <div class="qr-preview">
+        <video id="qr-video" playsinline autoplay muted></video>
+        <div class="qr-overlay"><div class="qr-frame"></div></div>
+        <canvas id="qr-canvas" style="display:none"></canvas>
+      </div>
+      <div class="qr-status" id="qr-status">Iniciando cámara...</div>
+    </div>
+
+    <!-- PANEL TEXTO -->
+    <div id="panel-texto" style="display:none">
+      <div class="field" style="margin-bottom:8px">
+        <label>Pega aquí el texto del QR</label>
+        <textarea id="qr-text-input" rows="6"
+          style="width:100%;border:2px solid var(--green);border-radius:8px;padding:10px 12px;font-size:13px;font-family:monospace;resize:vertical;outline:none"
+          placeholder="FDC IMP:DIM0449&#10;LOTE:0449-66430P&#10;EXP:FRUTERA INTER&#10;CONT:HLBU9066430&#10;APPLES/GRANNY SMITH/CAT 1&#10;C80:40|C88:8|C100:252&#10;TOT:300"
+          oninput="autoDetectarQR(this.value)"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="procesarTextoManual()">🔍 Procesar</button>
+    </div>
+
+    <!-- RESULTADO -->
+    <div class="qr-result-box" id="qr-result-box">
+      <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;text-transform:uppercase">✅ Datos extraídos del QR</div>
+      <div id="qr-fields"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="cerrarQR()">Cancelar</button>
+      <button class="btn btn-secondary" id="btn-aplicar-qr" style="display:none" onclick="aplicarQR()">📋 Aplicar al formulario</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ENVÍO -->
+<div class="modal-overlay" id="modalEnvio">
+  <div class="modal">
+    <h3>📧 Enviar inventario por correo</h3>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Se generará un correo con el resumen completo del conteo en formato de tabla.</p>
+    <div class="field" style="margin-bottom:12px">
+      <label>Correo destinatario</label>
+      <input type="email" id="modalCorreo" placeholder="inventario@empresa.com">
+    </div>
+    <div class="field">
+      <label>Asunto del correo</label>
+      <input type="text" id="modalAsunto">
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="enviarCorreo()">📤 Abrir correo</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CATALOG DATA ───────────────────────────────────────
+const CATALOG = [{"variedad": "0201 - GALA", "calibre": "0435 - CALIBRE 80", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0436 - CALIBRE 88", "categoria": "0301 - PREMIUM", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0436 - CALIBRE 88", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0439 - CALIBRE 100", "categoria": "0301 - PREMIUM", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0439 - CALIBRE 100", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0439 - CALIBRE 100", "categoria": "0304 - EXTRAFANCY AA", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0439 - CALIBRE 100", "categoria": "0305 - EXTRAFANCY A", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0439 - CALIBRE 100", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0441 - CALIBRE 113", "categoria": "0301 - PREMIUM", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0441 - CALIBRE 113", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0441 - CALIBRE 113", "categoria": "0304 - EXTRAFANCY AA", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0441 - CALIBRE 113", "categoria": "0305 - EXTRAFANCY A", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0441 - CALIBRE 113", "categoria": "0310 - FANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0441 - CALIBRE 113", "categoria": "0312 - FANCY X", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0443 - CALIBRE 125", "categoria": "0301 - PREMIUM", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0443 - CALIBRE 125", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0443 - CALIBRE 125", "categoria": "0304 - EXTRAFANCY AA", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0443 - CALIBRE 125", "categoria": "0305 - EXTRAFANCY A", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0443 - CALIBRE 125", "categoria": "0310 - FANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0443 - CALIBRE 125", "categoria": "0311 - FANCY A", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0443 - CALIBRE 125", "categoria": "0312 - FANCY X", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0445 - CALIBRE 138", "categoria": "0305 - EXTRAFANCY A", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0446 - CALIBRE 150", "categoria": "0301 - PREMIUM", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0446 - CALIBRE 150", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0446 - CALIBRE 150", "categoria": "0304 - EXTRAFANCY AA", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0446 - CALIBRE 150", "categoria": "0305 - EXTRAFANCY A", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0446 - CALIBRE 150", "categoria": "0310 - FANCY", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0446 - CALIBRE 150", "categoria": "0312 - FANCY X", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0446 - CALIBRE 150", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0447 - CALIBRE 163", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0449 - CALIBRE 175", "categoria": "0310 - FANCY", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0449 - CALIBRE 175", "categoria": "0312 - FANCY X", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0201 - GALA", "calibre": "0450 - CALIBRE 198", "categoria": "0301 - PREMIUM", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0204 - ROJA", "calibre": "0436 - CALIBRE 88", "categoria": "0320 - WAXF EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0204 - ROJA", "calibre": "0439 - CALIBRE 100", "categoria": "0320 - WAXF EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0204 - ROJA", "calibre": "0441 - CALIBRE 113", "categoria": "0320 - WAXF EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0204 - ROJA", "calibre": "0443 - CALIBRE 125", "categoria": "0320 - WAXF EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0205 - VERDE", "calibre": "0435 - CALIBRE 80", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0205 - VERDE", "calibre": "0436 - CALIBRE 88", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0205 - VERDE", "calibre": "0439 - CALIBRE 100", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0205 - VERDE", "calibre": "0443 - CALIBRE 125", "categoria": "0307 - EXTRAFANCY X", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0205 - VERDE", "calibre": "0441 - CALIBRE 113", "categoria": "0307 - EXTRAFANCY X", "cajasXpallet": 49, "tipo": "Gruesa"}, {"variedad": "0205 - VERDE", "calibre": "0446 - CALIBRE 150", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0205 - VERDE", "calibre": "0447 - CALIBRE 163", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0205 - VERDE", "calibre": "0449 - CALIBRE 175", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0205 - VERDE", "calibre": "0450 - CALIBRE 198", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0208 - KIWI VERDE", "calibre": "0405 - CALIBRE 30", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0208 - KIWI VERDE", "calibre": "0407 - CALIBRE 33", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0208 - KIWI VERDE", "calibre": "0409 - CALIBRE 36", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0208 - KIWI VERDE", "calibre": "0411 - CALIBRE 39", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0208 - KIWI VERDE", "calibre": "0414 - CALIBRE 45", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0213 - PACKHAM", "calibre": "0437 - CALIBRE 90", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Gruesa"}, {"variedad": "0213 - PACKHAM", "calibre": "0439 - CALIBRE 100", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Gruesa"}, {"variedad": "0213 - PACKHAM", "calibre": "0440 - CALIBRE 110", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Gruesa"}, {"variedad": "0213 - PACKHAM", "calibre": "0442 - CALIBRE 120", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Gruesa"}, {"variedad": "0213 - PACKHAM", "calibre": "0444 - CALIBRE 135", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Delgada"}, {"variedad": "0213 - PACKHAM", "calibre": "0446 - CALIBRE 150", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Delgada"}, {"variedad": "0213 - PACKHAM", "calibre": "0448 - CALIBRE 165", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Delgada"}, {"variedad": "0214 - SUMMER BARTLETT", "calibre": "0439 - CALIBRE 100", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Gruesa"}, {"variedad": "0214 - SUMMER BARTLETT", "calibre": "0440 - CALIBRE 110", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Gruesa"}, {"variedad": "0214 - SUMMER BARTLETT", "calibre": "0442 - CALIBRE 120", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Gruesa"}, {"variedad": "0214 - SUMMER BARTLETT", "calibre": "0444 - CALIBRE 135", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 64, "tipo": "Delgada"}, {"variedad": "0216 - VERDE SIN SEMILLA", "calibre": "0453 - CALIBRE JUMBO", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 114, "tipo": "Unico"}, {"variedad": "0216 - VERDE SIN SEMILLA", "calibre": "0458 - CALIBRE XL", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 114, "tipo": "Unico"}, {"variedad": "0218 - RED GLOBE", "calibre": "0453 - CALIBRE JUMBO", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 114, "tipo": "Unico"}, {"variedad": "0218 - RED GLOBE", "calibre": "0454 - CALIBRE L", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 114, "tipo": "Unico"}, {"variedad": "0221 - NECTARIN", "calibre": "0314 - CATEGORIA 1", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0221 - NECTARIN", "calibre": "0314 - CATEGORIA 1", "categoria": "0615 - NECTARIN 30-38", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0221 - NECTARIN", "calibre": "0314 - CATEGORIA 1", "categoria": "0616 - NECTARIN 40-48", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0221 - NECTARIN", "calibre": "0314 - CATEGORIA 1", "categoria": "0617 - NECTARIN 50-58", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0221 - NECTARIN", "calibre": "0314 - CATEGORIA 1", "categoria": "0618 - NECTARIN 60-68", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0221 - NECTARIN", "calibre": "0419 - CALIBRE 50", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0222 - CIRUELA", "calibre": "0314 - CATEGORIA 1", "categoria": "0428 - CALIBRE 66", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0225 - SWEET GLOBE", "calibre": "0453 - CALIBRE JUMBO", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 114, "tipo": "Unico"}, {"variedad": "0232 - RUBY", "calibre": "0447 - CALIBRE 163", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0203 - PINK LADY", "calibre": "0447 - CALIBRE 163", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 56, "tipo": "Delgada"}, {"variedad": "0203 - PINK LADY", "calibre": "0449 - CALIBRE 175", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 56, "tipo": "Delgada"}, {"variedad": "0203 - PINK LADY", "calibre": "0446 - CALIBRE 150", "categoria": "0302 - EXTRAFANCY", "cajasXpallet": 56, "tipo": "Delgada"}, {"variedad": "0222 - CIRUELA", "calibre": "0429 - CALIBRE 68", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0222 - CIRUELA", "calibre": "0426 - CALIBRE 64", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0222 - CIRUELA", "calibre": "0409 - CALIBRE 36", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0222 - CIRUELA", "calibre": "0417 - CALIBRE 48", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0222 - CIRUELA", "calibre": "0420 - CALIBRE 52", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0222 - CIRUELA", "calibre": "0422 - CALIBRE 56", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0222 - CIRUELA", "calibre": "0423 - CALIBRE 58", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 120, "tipo": "Unico"}, {"variedad": "0215 - NEGRA SIN SEMILLA", "calibre": "0453 - CALIBRE JUMBO", "categoria": "0314 - CATEGORIA 1", "cajasXpallet": 114, "tipo": "Unico"}, {"variedad": "0201 - GALA", "calibre": "0452 - CALIBRE 216", "categoria": "0316 - C GRADE", "cajasXpallet": 49, "tipo": "Delgada"}, {"variedad": "0299 - N/A", "calibre": "0499 - N/A", "categoria": "0314 - CATEGORIA 1 (Calibre 1xx) Mandarina", "cajasXpallet": 110, "tipo": "Delgada"}, {"variedad": "0299 - N/A", "calibre": "0499 - N/A", "categoria": "0314 - CATEGORIA 1 (Calibre 1xxX) Mandarina", "cajasXpallet": 110, "tipo": "Gruesa"}, {"variedad": "0201 - GALA", "calibre": "0431 - CALIBRE 72", "categoria": "0305 - EXTRAFANCY A", "cajasXpallet": 49, "tipo": "Gruesa"}];
+
+// ─── LISTAS COMPLETAS INDEPENDIENTES ─────────────────────
+const ALL_VARIEDADES = [
+  "0201 - GALA",
+  "0202 - FUJI",
+  "0203 - PINK LADY",
+  "0204 - ROJA",
+  "0205 - VERDE",
+  "0206 - MODI",
+  "0207 - KIWI AMARILLO",
+  "0208 - KIWI VERDE",
+  "0209 - ASIATICA",
+  "0210 - BEURRE BOSC",
+  "0211 - D ANJOU",
+  "0212 - FORELLE",
+  "0213 - PACKHAM",
+  "0214 - SUMMER BARTLETT",
+  "0215 - NEGRA SIN SEMILLA",
+  "0216 - VERDE SIN SEMILLA",
+  "0217 - ROJA SIN SEMILLA",
+  "0218 - RED GLOBE",
+  "0219 - VERDE CON SEMILLA",
+  "0220 - CEREZA",
+  "0221 - NECTARIN",
+  "0222 - CIRUELA",
+  "0223 - CRIPPS PINK LADY",
+  "0224 - BEURRE ANJOU",
+  "0225 - SWEET GLOBE",
+  "0226 - NARANJA",
+  "0227 - GARDETA",
+  "0228 - ZEE FIRE",
+  "0229 - SWEET RED DIAMOND",
+  "0230 - SANTINA",
+  "0231 - TANGELO",
+  "0232 - RUBY",
+  "0299 - N/A"
+];
+
+const ALL_CALIBRES = [
+  "0401 - CALIBRE 20",
+  "0402 - CALIBRE 23",
+  "0403 - CALIBRE 25",
+  "0404 - CALIBRE 27",
+  "0405 - CALIBRE 30",
+  "0406 - CALIBRE 32",
+  "0407 - CALIBRE 33",
+  "0408 - CALIBRE 34",
+  "0409 - CALIBRE 36",
+  "0410 - CALIBRE 38",
+  "0411 - CALIBRE 39",
+  "0412 - CALIBRE 40",
+  "0413 - CALIBRE 44",
+  "0414 - CALIBRE 45",
+  "0415 - CALIBRE 46",
+  "0416 - CALIBRE 42",
+  "0417 - CALIBRE 48",
+  "0418 - CALIBRE 49",
+  "0419 - CALIBRE 50",
+  "0420 - CALIBRE 52",
+  "0421 - CALIBRE 54",
+  "0422 - CALIBRE 56",
+  "0423 - CALIBRE 58",
+  "0424 - CALIBRE 60",
+  "0425 - CALIBRE 62",
+  "0426 - CALIBRE 64",
+  "0427 - CALIBRE 65",
+  "0428 - CALIBRE 66",
+  "0429 - CALIBRE 68",
+  "0430 - CALIBRE 70",
+  "0431 - CALIBRE 72",
+  "0432 - CALIBRE 74",
+  "0433 - CALIBRE 76",
+  "0434 - CALIBRE 78",
+  "0435 - CALIBRE 80",
+  "0436 - CALIBRE 88",
+  "0437 - CALIBRE 90",
+  "0438 - CALIBRE 98",
+  "0439 - CALIBRE 100",
+  "0440 - CALIBRE 110",
+  "0441 - CALIBRE 113",
+  "0442 - CALIBRE 120",
+  "0443 - CALIBRE 125",
+  "0444 - CALIBRE 135",
+  "0445 - CALIBRE 138",
+  "0446 - CALIBRE 150",
+  "0447 - CALIBRE 163",
+  "0448 - CALIBRE 165",
+  "0449 - CALIBRE 175",
+  "0450 - CALIBRE 198",
+  "0451 - CALIBRE 210",
+  "0452 - CALIBRE 216",
+  "0453 - CALIBRE JUMBO",
+  "0454 - CALIBRE L",
+  "0455 - CALIBRE M",
+  "0456 - CALIBRE S",
+  "0457 - CALIBRE SUPER JUMBO",
+  "0458 - CALIBRE XL",
+  "0484 - CALIBRE 84",
+  "0485 - CALIBRE 55",
+  "0486 - CALIBRE 35",
+  "0487 - CALIBRE 180",
+  "0488 - CALIBRE LG",
+  "0490 - JJ (EXTRAGRANDE)",
+  "0491 - JJJ (GRANDE)",
+  "0492 - CALIBRE 84",
+  "0493 - CALIBRE XXL",
+  "0494 - CALIBRE 108",
+  "0495 - CALIBRE 67",
+  "0499 - N/A"
+];
+
+const ALL_CATEGORIAS = [
+  "0301 - PREMIUM",
+  "0302 - EXTRAFANCY",
+  "0303 - EXTRAFANCY AAA",
+  "0304 - EXTRAFANCY AA",
+  "0305 - EXTRAFANCY A",
+  "0306 - EXTRAFANCY C",
+  "0307 - EXTRAFANCY X",
+  "0308 - EXTRAFANCY Y",
+  "0309 - EXTRAFANCY SC",
+  "0310 - FANCY",
+  "0311 - FANCY A",
+  "0312 - FANCY X",
+  "0313 - CHOICE",
+  "0314 - CATEGORIA 1",
+  "0315 - CATEGORIA 2",
+  "0316 - C GRADE",
+  "0317 - FANCY C",
+  "0318 - WAXF PREMIUM",
+  "0319 - USXF # 1",
+  "0320 - WAXF EXTRAFANCY",
+  "0321 - WAXF FANCY",
+  "0322 - BANDEJAS",
+  "0323 - BOLSAS",
+  "0324 - BURBUJAS",
+  "0325 - ANCHETAS",
+  "0326 - CEM",
+  "0327 - S GRADE",
+  "0328 - WAXF B",
+  "0329 - CINTAS",
+  "0330 - ETIQUETAS Y STICKER",
+  "0331 - VITAFILM",
+  "0332 - CORREA",
+  "0333 - SWEET GLOBE",
+  "0334 - WAXF",
+  "0335 - CATEGORIA 1R",
+  "0399 - N/A",
+  "EFC - EXTRAFANCY COMERCIAL",
+  "FC - FANCY COMERCIAL",
+  "0428 - CALIBRE 66",
+  "0615 - NECTARIN 30-38",
+  "0616 - NECTARIN 40-48",
+  "0617 - NECTARIN 50-58",
+  "0618 - NECTARIN 60-68"
+];
+
+// ─── STATE ───────────────────────────────────────────────
+const LS_KEY = 'inventario_bccpal_registros';
+let registros = [];
+let modoNuevo = false;
+
+// ─── LOCALSTORAGE ────────────────────────────────────────
+function guardarLocal() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(registros)); } catch(e) {}
+}
+function cargarLocal() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) { registros = JSON.parse(raw); }
+  } catch(e) { registros = []; }
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  const iso = today.toISOString().split('T')[0];
+  document.getElementById('fechaConteo').value = iso;
+  document.getElementById('fechaHeader').textContent = today.toLocaleDateString('es-CO', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('fechaConteo').addEventListener('change', actualizarFecha);
+
+  // Poblar los 3 dropdowns con listas completas independientes
+  poblarSelect('variedad', ALL_VARIEDADES);
+  poblarSelect('calibre', ALL_CALIBRES);
+  poblarSelect('categoria', ALL_CATEGORIAS);
+
+  // Cargar datos guardados
+  cargarLocal();
+  if (registros.length > 0) {
+    renderTabla();
+    showToast('📂 ' + registros.length + ' registros recuperados del guardado automático');
+  }
+
+  document.getElementById('posicion').focus();
+});
+
+function poblarSelect(id, lista) {
+  const sel = document.getElementById(id);
+  // Limpiar opciones excepto la primera
+  while (sel.options.length > 1) sel.remove(1);
+  lista.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+function actualizarFecha() {
+  const d = new Date(document.getElementById('fechaConteo').value + 'T12:00:00');
+  document.getElementById('fechaHeader').textContent = d.toLocaleDateString('es-CO', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
+
+// ─── MODO NUEVO ARTÍCULO ──────────────────────────────────
+function onTipoProdChange() {
+  const tipo = document.getElementById('tipoProd').value;
+  modoNuevo = tipo === 'nuevo';
+  document.getElementById('badge-nuevo').style.display = modoNuevo ? 'inline-block' : 'none';
+
+  document.getElementById('wrap-variedad').style.display        = modoNuevo ? 'none' : '';
+  document.getElementById('wrap-calibre').style.display         = modoNuevo ? 'none' : '';
+  document.getElementById('wrap-categoria').style.display       = modoNuevo ? 'none' : '';
+  document.getElementById('wrap-variedad-libre').style.display  = modoNuevo ? '' : 'none';
+  document.getElementById('wrap-calibre-libre').style.display   = modoNuevo ? '' : 'none';
+  document.getElementById('wrap-categoria-libre').style.display = modoNuevo ? '' : 'none';
+
+  const cxp = document.getElementById('cajasXPallet');
+  if (modoNuevo) {
+    cxp.removeAttribute('readonly');
+    cxp.classList.add('highlight');
+    cxp.value = '';
+  } else {
+    cxp.setAttribute('readonly', true);
+    cxp.classList.remove('highlight');
+    cxp.value = '';
+  }
+  document.getElementById('cantPallets').value = '';
+}
+
+// Al cambiar variedad: autocompletar cajas x pallet si hay coincidencia exacta
+function onVariedadChange() {
+  document.getElementById('cajasXPallet').value = '';
+  document.getElementById('cantPallets').value = '';
+  autoCajasXPallet();
+}
+function onCalibreChange() {
+  document.getElementById('cajasXPallet').value = '';
+  document.getElementById('cantPallets').value = '';
+  autoCajasXPallet();
+}
+function onCategoriaChange() {
+  autoCajasXPallet();
+}
+
+function autoCajasXPallet() {
+  const v = document.getElementById('variedad').value;
+  const c = document.getElementById('calibre').value;
+  const cat = document.getElementById('categoria').value;
+  if (!v || !c || !cat) return;
+  const match = CATALOG.find(r => r.variedad === v && r.calibre === c && r.categoria === cat);
+  if (match) {
+    document.getElementById('cajasXPallet').value = match.cajasXpallet;
+    calcPallets();
+  }
+}
+
+// ─── CALC PALLETS ─────────────────────────────────────────
+function calcPallets() {
+  const cxp = parseFloat(document.getElementById('cajasXPallet').value) || 0;
+  const cajas = parseFloat(document.getElementById('cantCajas').value) || 0;
+  if (cxp > 0 && cajas > 0) {
+    document.getElementById('cantPallets').value = (cajas / cxp).toFixed(2);
+  } else {
+    document.getElementById('cantPallets').value = '';
+  }
+}
+
+// ─── AGREGAR FILA ────────────────────────────────────────
+function agregarFila() {
+  const pos      = document.getElementById('posicion').value.trim();
+  const proveedor= document.getElementById('proveedor').value;
+  const lote     = document.getElementById('lote').value.trim();
+  const cajas    = parseFloat(document.getElementById('cantCajas').value);
+  const pallets  = parseFloat(document.getElementById('cantPallets').value) || 0;
+  const cxp      = parseFloat(document.getElementById('cajasXPallet').value) || 0;
+
+  let variedad, calibre, categoria, tipo;
+  if (modoNuevo) {
+    variedad  = document.getElementById('variedadLibre').value.trim();
+    calibre   = document.getElementById('calibreLibre').value.trim();
+    categoria = document.getElementById('categoriaLibre').value.trim();
+    tipo = 'Nuevo';
+  } else {
+    variedad  = document.getElementById('variedad').value;
+    calibre   = document.getElementById('calibre').value;
+    categoria = document.getElementById('categoria').value;
+    const match = CATALOG.find(r => r.variedad === variedad && r.calibre === calibre && r.categoria === categoria);
+    tipo = match ? match.tipo : '–';
+  }
+
+  if (!pos)       { showToast('⚠️ Ingrese la posición', true); return; }
+  if (!proveedor) { showToast('⚠️ Seleccione el proveedor', true); return; }
+  if (!lote)      { showToast('⚠️ Ingrese el lote', true); return; }
+  if (!variedad)  { showToast('⚠️ Seleccione o ingrese la variedad', true); return; }
+  if (!calibre)   { showToast('⚠️ Seleccione o ingrese el calibre', true); return; }
+  if (!categoria) { showToast('⚠️ Seleccione o ingrese la categoría', true); return; }
+  if (!cajas || cajas <= 0) { showToast('⚠️ Ingrese la cantidad de cajas', true); return; }
+
+  registros.push({ pos, proveedor, lote, variedad, calibre, categoria, cxp, cajas, pallets, tipo, esNuevo: modoNuevo });
+  guardarLocal();
+  renderTabla();
+  limpiarForm();
+  showToast('✅ Posición ' + pos + ' agregada y guardada');
+  document.getElementById('posicion').focus();
+}
+
+// ─── RENDER TABLA ────────────────────────────────────────
+function renderTabla() {
+  const tbody = document.getElementById('tbody');
+  if (registros.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty"><div class="icon">📋</div>No hay registros aún. Agregue la primera posición.</td></tr>';
+    actualizarSummary();
+    return;
+  }
+  tbody.innerHTML = '';
+  registros.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    if (r.esNuevo) tr.classList.add('nuevo-row');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td><strong>${r.pos}</strong></td>
+      <td>${r.proveedor || '–'}</td>
+      <td>${r.lote || '–'}</td>
+      <td>${r.variedad}${r.esNuevo ? '<span class="tag-nuevo">NUEVO</span>' : ''}</td>
+      <td>${r.calibre}</td>
+      <td>${r.categoria}</td>
+      <td>${r.cxp || '–'}</td>
+      <td><strong>${r.cajas}</strong></td>
+      <td>${r.pallets}</td>
+      <td>${r.tipo}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="eliminarFila(${i})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  const totalCajas   = registros.reduce((s,r) => s + r.cajas, 0);
+  const totalPallets = registros.reduce((s,r) => s + r.pallets, 0);
+  const tr = document.createElement('tr');
+  tr.className = 'totals-row';
+  tr.innerHTML = `<td colspan="8" style="color:white;font-weight:700">TOTALES</td><td style="color:white;font-weight:700">${totalCajas}</td><td style="color:white;font-weight:700">${totalPallets.toFixed(2)}</td><td colspan="2"></td>`;
+  tbody.appendChild(tr);
+  actualizarSummary();
+}
+
+function actualizarSummary() {
+  document.getElementById('cnt-pos').textContent    = registros.length;
+  document.getElementById('cnt-cajas').textContent  = registros.reduce((s,r)=>s+r.cajas,0);
+  document.getElementById('cnt-pallets').textContent= registros.reduce((s,r)=>s+r.pallets,0).toFixed(2);
+  document.getElementById('cnt-nuevos').textContent = registros.filter(r=>r.esNuevo).length;
+}
+
+function eliminarFila(i) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  registros.splice(i, 1);
+  guardarLocal();
+  renderTabla();
+}
+
+// ─── LIMPIAR FORM ────────────────────────────────────────
+function limpiarForm() {
+  ['posicion','lote','variedadLibre','calibreLibre','categoriaLibre','cantCajas','cantPallets','cajasXPallet'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('proveedor').value  = '';
+  document.getElementById('tipoProd').value   = '';
+  document.getElementById('variedad').value   = '';
+  document.getElementById('calibre').value    = '';
+  document.getElementById('categoria').value  = '';
+  modoNuevo = false;
+  document.getElementById('badge-nuevo').style.display         = 'none';
+  document.getElementById('wrap-variedad').style.display       = '';
+  document.getElementById('wrap-calibre').style.display        = '';
+  document.getElementById('wrap-categoria').style.display      = '';
+  document.getElementById('wrap-variedad-libre').style.display = 'none';
+  document.getElementById('wrap-calibre-libre').style.display  = 'none';
+  document.getElementById('wrap-categoria-libre').style.display= 'none';
+  document.getElementById('cajasXPallet').setAttribute('readonly', true);
+  document.getElementById('cajasXPallet').classList.remove('highlight');
+}
+
+function confirmarLimpiar() {
+  if (registros.length === 0) return;
+  if (confirm('¿Está seguro de eliminar TODOS los registros del conteo? Esta acción no se puede deshacer.')) {
+    registros = [];
+    guardarLocal();
+    renderTabla();
+    showToast('🗑️ Conteo borrado');
+  }
+}
+
+// ─── EXPORTAR EXCEL ──────────────────────────────────────
+function exportarCSV() {
+  if (registros.length === 0) { showToast('⚠️ No hay registros para exportar', true); return; }
+  if (typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no disponible, verifique conexión', true); return; }
+
+  const fecha   = document.getElementById('fechaConteo').value;
+  const resp    = document.getElementById('responsable').value || 'Sin nombre';
+  const totalCajas   = registros.reduce((s,r)=>s+r.cajas,0);
+  const totalPallets = registros.reduce((s,r)=>s+r.pallets,0).toFixed(2);
+
+  const wb = XLSX.utils.book_new();
+  const wsData = [];
+
+  // Encabezado del reporte
+  wsData.push(['TOMA FÍSICA DE INVENTARIO – CD PRINCIPAL BCCPAL']);
+  wsData.push(['Fecha:', fecha, '', 'Responsable:', resp]);
+  wsData.push(['Total posiciones:', registros.length, '', 'Total cajas:', totalCajas, '', 'Total pallets:', totalPallets]);
+  wsData.push([]);
+
+  // Encabezados de columna
+  wsData.push(['N°','POSICIÓN','PROVEEDOR','LOTE','VARIEDAD','CALIBRE','CATEGORÍA','CJ/PLT','CAJAS','PALLETS','TIPO','ART. NUEVO']);
+
+  // Filas de datos
+  registros.forEach((r, i) => {
+    wsData.push([
+      i+1, r.pos, r.proveedor, r.lote, r.variedad,
+      r.calibre, r.categoria, r.cxp, r.cajas,
+      parseFloat(r.pallets), r.tipo, r.esNuevo ? 'SÍ' : 'NO'
+    ]);
+  });
+
+  // Fila de totales
+  wsData.push(['','','','','','','','TOTALES', totalCajas, parseFloat(totalPallets),'','']);
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Anchos de columna
+  ws['!cols'] = [
+    {wch:4},{wch:12},{wch:22},{wch:14},{wch:22},
+    {wch:18},{wch:22},{wch:8},{wch:8},{wch:9},{wch:10},{wch:10}
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+
+  // Hoja de resumen por proveedor
+  const porProveedor = {};
+  registros.forEach(r => {
+    const k = r.proveedor || 'Sin proveedor';
+    if (!porProveedor[k]) porProveedor[k] = { cajas: 0, pallets: 0, posiciones: 0 };
+    porProveedor[k].cajas    += r.cajas;
+    porProveedor[k].pallets  += r.pallets;
+    porProveedor[k].posiciones++;
+  });
+  const ws2Data = [['RESUMEN POR PROVEEDOR'],[''],['PROVEEDOR','POSICIONES','CAJAS','PALLETS']];
+  Object.entries(porProveedor).forEach(([prov, d]) => {
+    ws2Data.push([prov, d.posiciones, d.cajas, parseFloat(d.pallets.toFixed(2))]);
+  });
+  ws2Data.push(['TOTAL', registros.length, totalCajas, parseFloat(totalPallets)]);
+  const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols'] = [{wch:26},{wch:12},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  XLSX.writeFile(wb, `Inventario_BCCPAL_${fecha}.xlsx`);
+  showToast('⬇️ Excel descargado correctamente');
+}
+
+// ─── ENVIAR CORREO ────────────────────────────────────────
+function abrirModalEnvio() {
+  if (registros.length === 0) { showToast('⚠️ No hay registros para enviar', true); return; }
+  const correo = document.getElementById('correoDestino').value;
+  const fecha  = document.getElementById('fechaConteo').value;
+  document.getElementById('modalCorreo').value  = correo;
+  document.getElementById('modalAsunto').value  = `Toma Física Inventario CD PPAL – ${fecha}`;
+  document.getElementById('modalEnvio').classList.add('open');
+}
+
+function cerrarModal() {
+  document.getElementById('modalEnvio').classList.remove('open');
+}
+
+function enviarCorreo() {
+  const correo = document.getElementById('modalCorreo').value.trim();
+  const asunto = document.getElementById('modalAsunto').value.trim();
+  const fecha  = document.getElementById('fechaConteo').value;
+  const resp   = document.getElementById('responsable').value || '–';
+  if (!correo) { alert('Ingrese un correo destinatario'); return; }
+
+  const totalCajas   = registros.reduce((s,r)=>s+r.cajas,0);
+  const totalPallets = registros.reduce((s,r)=>s+r.pallets,0).toFixed(2);
+  const nuevos = registros.filter(r=>r.esNuevo);
+
+  let body = `TOMA FÍSICA DE INVENTARIO – CD PRINCIPAL BCCPAL\n`;
+  body += `Fecha: ${fecha}   |   Responsable: ${resp}\n`;
+  body += `Total posiciones: ${registros.length}   |   Total cajas: ${totalCajas}   |   Total pallets: ${totalPallets}\n`;
+  if (nuevos.length > 0) body += `⚠️ Artículos nuevos detectados: ${nuevos.length}\n`;
+  body += `\n${'─'.repeat(80)}\n`;
+  body += `N°\tPOSICIÓN\tPROVEEDOR\tLOTE\tVARIEDAD\tCALIBRE\tCATEGORÍA\tCJ/PLT\tCAJAS\tPALLETS\tTIPO\n`;
+  body += `${'─'.repeat(80)}\n`;
+  registros.forEach((r, i) => {
+    body += `${i+1}\t${r.pos}\t${r.proveedor}\t${r.lote}\t${r.variedad}\t${r.calibre}\t${r.categoria}\t${r.cxp}\t${r.cajas}\t${r.pallets}\t${r.tipo}${r.esNuevo ? ' ⭐NUEVO' : ''}\n`;
+  });
+  body += `${'─'.repeat(80)}\n`;
+  body += `TOTALES\t\t\t\t\t\t\t\t${totalCajas}\t${totalPallets}\n`;
+  if (nuevos.length > 0) {
+    body += `\n⭐ ARTÍCULOS NUEVOS (requieren actualización en catálogo):\n`;
+    nuevos.forEach((r,i) => {
+      body += `${i+1}. Pos: ${r.pos} | Proveedor: ${r.proveedor} | Lote: ${r.lote} | ${r.variedad} | ${r.calibre} | ${r.categoria}\n`;
+    });
+  }
+  const mailto = `mailto:${encodeURIComponent(correo)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+  cerrarModal();
+  showToast('📧 Abriendo cliente de correo...');
+}
+
+// ─── TOAST ───────────────────────────────────────────────
+function showToast(msg, error=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = error ? '#c0392b' : '#1a6b3c';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── QR SCANNER ──────────────────────────────────────────
+let qrParsed = null;
+let autoDetectTimer = null;
+let qrStream = null;
+let qrAnimFrame = null;
+let qrTabActiva = 'cam';
+let jsQRScript = null;
+
+function switchQRTab(tab) {
+  qrTabActiva = tab;
+  document.getElementById('tab-cam').classList.toggle('active', tab === 'cam');
+  document.getElementById('tab-texto').classList.toggle('active', tab === 'texto');
+  document.getElementById('panel-cam').style.display = tab === 'cam' ? '' : 'none';
+  document.getElementById('panel-texto').style.display = tab === 'texto' ? '' : 'none';
+  if (tab === 'cam') iniciarCamara();
+  else detenerCamara();
+}
+
+function abrirQR() {
+  qrParsed = null;
+  document.getElementById('qr-result-box').style.display = 'none';
+  document.getElementById('btn-aplicar-qr').style.display = 'none';
+  document.getElementById('qr-status').textContent = 'Iniciando cámara...';
+  document.getElementById('qr-status').className = 'qr-status';
+  if (document.getElementById('qr-text-input')) document.getElementById('qr-text-input').value = '';
+  document.getElementById('modalQR').classList.add('open');
+  // Iniciar en pestaña cámara
+  switchQRTab('cam');
+}
+
+function cerrarQR() {
+  detenerCamara();
+  document.getElementById('modalQR').classList.remove('open');
+  if (autoDetectTimer) { clearTimeout(autoDetectTimer); autoDetectTimer = null; }
+}
+
+function detenerCamara() {
+  if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
+  if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+}
+
+async function iniciarCamara() {
+  detenerCamara();
+  const video = document.getElementById('qr-video');
+  const status = document.getElementById('qr-status');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    status.innerHTML = '⚠️ Cámara no disponible. Usa la pestaña "Pegar texto".';
+    status.className = 'qr-status err';
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    qrStream = stream;
+    video.srcObject = stream;
+    await video.play();
+    status.textContent = '📷 Apunta al código QR...';
+    status.className = 'qr-status ok';
+
+    // Intentar BarcodeDetector nativo primero (más rápido, sin librerías)
+    if (window.BarcodeDetector) {
+      try {
+        const supported = await BarcodeDetector.getSupportedFormats();
+        if (supported.includes('qr_code')) {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          escanearConDetector(video, detector);
+          return;
+        }
+      } catch(e) {}
+    }
+
+    // Fallback: cargar jsQR dinámicamente y usar canvas
+    cargarJsQRyEscanear(video);
+
+  } catch(err) {
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      status.innerHTML = '🔒 Permiso denegado. Abre la app desde GitHub Pages (HTTPS) para usar la cámara, o usa la pestaña <strong>"Pegar texto"</strong>.';
+      status.className = 'qr-status err';
+    } else {
+      status.innerHTML = '⚠️ No se pudo acceder a la cámara. Usa la pestaña "Pegar texto".';
+      status.className = 'qr-status err';
+    }
+  }
+}
+
+// Escáner con BarcodeDetector nativo (Chrome/Edge modernos)
+async function escanearConDetector(video, detector) {
+  if (!qrStream) return;
+  try {
+    const codes = await detector.detect(video);
+    if (codes && codes.length > 0) {
+      detenerCamara();
+      procesarQRTexto(codes[0].rawValue);
+      return;
+    }
+  } catch(e) {}
+  qrAnimFrame = requestAnimationFrame(() => escanearConDetector(video, detector));
+}
+
+// Cargar jsQR dinámicamente y escanear con canvas
+function cargarJsQRyEscanear(video) {
+  const status = document.getElementById('qr-status');
+  if (window.jsQR) { escanearConCanvas(video); return; }
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+  script.onload = () => escanearConCanvas(video);
+  script.onerror = () => {
+    status.innerHTML = '⚠️ Sin conexión para cargar el escáner. Usa la pestaña "Pegar texto".';
+    status.className = 'qr-status err';
+  };
+  document.head.appendChild(script);
+}
+
+function escanearConCanvas(video) {
+  if (!qrStream) return;
+  const canvas = document.getElementById('qr-canvas');
+  if (!video.videoWidth) { qrAnimFrame = requestAnimationFrame(() => escanearConCanvas(video)); return; }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0);
+  try {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+    if (code && code.data) {
+      detenerCamara();
+      procesarQRTexto(code.data);
+      return;
+    }
+  } catch(e) {}
+  qrAnimFrame = requestAnimationFrame(() => escanearConCanvas(video));
+}
+
+// Auto-detección al pegar texto (pistola lectora o pegado manual)
+function autoDetectarQR(valor) {
+  if (autoDetectTimer) clearTimeout(autoDetectTimer);
+  if (!valor.trim()) return;
+  if (valor.includes('FDC IMP:') || valor.includes('LOTE:')) {
+    autoDetectTimer = setTimeout(() => procesarTextoManual(), 400);
+  }
+}
+
+function procesarTextoManual() {
+  const texto = document.getElementById('qr-text-input').value.trim();
+  if (!texto) { showToast('⚠️ Pega el contenido del QR', true); return; }
+  procesarQRTexto(texto);
+}
+
+// Mapeo de exportadores del QR a proveedores del catálogo
+const PROVEEDOR_MAP = {
+  'DOLE': '0501 - DOLE CHILE',
+  'DOLE CHILE': '0501 - DOLE CHILE',
+  'DOLE ITALIA': '0502 - DOLE ITALIA',
+  'AGROFRUTA': '0503 - AGROFRUTA S.A',
+  'AGROFRUTA S.A': '0503 - AGROFRUTA S.A',
+  'AGROFRUTA FRESH': '0550 - AGROFRUTA FRESH',
+  'SFC': '0504 - SFC COMERCIAL CHILE',
+  'SFC COMERCIAL': '0504 - SFC COMERCIAL CHILE',
+  'DAVID DEL CURTO': '0505 - DAVID DEL CURTO',
+  'BLUE WHALE': '0507 - BLUE WHALE',
+  'STEMILT': '0511 - STEMILT',
+  'DUCKWALL': '0513 - DUCKWALL',
+  'TIFANETTE': '0514 - TIFANETTE',
+  'RK GROWERS': '0530 - RK GROWERS SRL',
+  'CMX': '0531 - CMX CHILE SPA',
+  'FRUTERA': '0534 - FRUTERA INTERNACIONAL',
+  'FRUTERA INTER': '0534 - FRUTERA INTERNACIONAL',
+  'FRUTERA INTERNACIONAL': '0534 - FRUTERA INTERNACIONAL',
+  'MITEXPORT': '0544 - MITEXPORT SpA',
+};
+
+// Mapeo de variedades del QR al catálogo
+const VARIEDAD_MAP = {
+  'GALA': '0201 - GALA',
+  'FUJI': '0202 - FUJI',
+  'PINK LADY': '0203 - PINK LADY',
+  'CRIPPS PINK': '0203 - PINK LADY',
+  'ROJA': '0204 - ROJA',
+  'RED DELICIOUS': '0204 - ROJA',
+  'VERDE': '0205 - VERDE',
+  'GRANNY SMITH': '0205 - VERDE',
+  'MODI': '0206 - MODI',
+  'KIWI AMARILLO': '0207 - KIWI AMARILLO',
+  'KIWI VERDE': '0208 - KIWI VERDE',
+  'KIWI': '0208 - KIWI VERDE',
+  'ASIATICA': '0209 - ASIATICA',
+  'ASIAN': '0209 - ASIATICA',
+  'BEURRE BOSC': '0210 - BEURRE BOSC',
+  'BOSC': '0210 - BEURRE BOSC',
+  'D ANJOU': '0211 - D ANJOU',
+  'ANJOU': '0211 - D ANJOU',
+  'FORELLE': '0212 - FORELLE',
+  'PACKHAM': '0213 - PACKHAM',
+  'SUMMER BARTLETT': '0214 - SUMMER BARTLETT',
+  'BARTLETT': '0214 - SUMMER BARTLETT',
+  'NEGRA SIN SEMILLA': '0215 - NEGRA SIN SEMILLA',
+  'BLACK SEEDLESS': '0215 - NEGRA SIN SEMILLA',
+  'VERDE SIN SEMILLA': '0216 - VERDE SIN SEMILLA',
+  'GREEN SEEDLESS': '0216 - VERDE SIN SEMILLA',
+  'ROJA SIN SEMILLA': '0217 - ROJA SIN SEMILLA',
+  'RED SEEDLESS': '0217 - ROJA SIN SEMILLA',
+  'RED GLOBE': '0218 - RED GLOBE',
+  'VERDE CON SEMILLA': '0219 - VERDE CON SEMILLA',
+  'CEREZA': '0220 - CEREZA',
+  'CHERRY': '0220 - CEREZA',
+  'NECTARIN': '0221 - NECTARIN',
+  'NECTARINE': '0221 - NECTARIN',
+  'CIRUELA': '0222 - CIRUELA',
+  'PLUM': '0222 - CIRUELA',
+  'CRIPPS PINK LADY': '0223 - CRIPPS PINK LADY',
+  'BEURRE ANJOU': '0224 - BEURRE ANJOU',
+  'SWEET GLOBE': '0225 - SWEET GLOBE',
+  'NARANJA': '0226 - NARANJA',
+  'ORANGE': '0226 - NARANJA',
+  'GARDETA': '0227 - GARDETA',
+  'ZEE FIRE': '0228 - ZEE FIRE',
+  'SWEET RED DIAMOND': '0229 - SWEET RED DIAMOND',
+  'SANTINA': '0230 - SANTINA',
+  'TANGELO': '0231 - TANGELO',
+  'RUBY': '0232 - RUBY',
+};
+
+// Mapeo de categorías del QR al catálogo
+const CATEGORIA_MAP = {
+  'PREMIUM': '0301 - PREMIUM',
+  'EXTRAFANCY': '0302 - EXTRAFANCY',
+  'EXTRAFANCY AAA': '0303 - EXTRAFANCY AAA',
+  'EXTRAFANCY AA': '0304 - EXTRAFANCY AA',
+  'EXTRAFANCY A': '0305 - EXTRAFANCY A',
+  'EXTRAFANCY X': '0307 - EXTRAFANCY X',
+  'FANCY': '0310 - FANCY',
+  'FANCY A': '0311 - FANCY A',
+  'FANCY X': '0312 - FANCY X',
+  'CHOICE': '0313 - CHOICE',
+  'CAT 1': '0314 - CATEGORIA 1',
+  'CATEGORIA 1': '0314 - CATEGORIA 1',
+  'CATEGORY 1': '0314 - CATEGORIA 1',
+  'CAT 2': '0315 - CATEGORIA 2',
+  'CATEGORIA 2': '0315 - CATEGORIA 2',
+  'C GRADE': '0316 - C GRADE',
+  'WAXF EXTRAFANCY': '0320 - WAXF EXTRAFANCY',
+  'WAXF FANCY': '0321 - WAXF FANCY',
+  'S GRADE': '0327 - S GRADE',
+  'CATEGORIA 1R': '0335 - CATEGORIA 1R',
+};
+
+function buscarEnMapa(texto, mapa) {
+  if (!texto) return null;
+  const t = texto.toUpperCase().trim();
+  // Búsqueda exacta primero
+  for (const k in mapa) { if (t === k.toUpperCase()) return mapa[k]; }
+  // Búsqueda parcial
+  for (const k in mapa) { if (t.includes(k.toUpperCase()) || k.toUpperCase().includes(t)) return mapa[k]; }
+  return null;
+}
+
+function procesarQRTexto(texto) {
+  /*
+  Formato esperado del QR (generado por la app QR Importaciones FDC):
+  FDC IMP:DIM0449(CP)
+  LOTE:0449-66430P
+  EXP:FRUTERA INTER
+  PTO:BUN
+  CONT:HLBU9066430
+  APPLES/GRANNY SMITH/CAT 1
+  C80:40|C88:8|C100:252|...
+  TOT:1029
+  */
+  const lines = texto.split('\n').map(l => l.trim()).filter(Boolean);
+  const parsed = {};
+
+  lines.forEach(line => {
+    if (line.startsWith('FDC IMP:')) parsed.importacion = line.replace('FDC IMP:', '').trim();
+    else if (line.startsWith('LOTE:')) parsed.lote = line.replace('LOTE:', '').trim();
+    else if (line.startsWith('EXP:')) parsed.exportador = line.replace('EXP:', '').trim();
+    else if (line.startsWith('PTO:')) parsed.puerto = line.replace('PTO:', '').trim();
+    else if (line.startsWith('CONT:')) parsed.contenedor = line.replace('CONT:', '').trim();
+    else if (line.startsWith('TOT:')) parsed.total = line.replace('TOT:', '').trim();
+    else if (line.includes('/') && !line.startsWith('C') && !line.includes(':')) {
+      // Línea tipo: APPLES/GRANNY SMITH/CAT 1
+      const parts = line.split('/');
+      if (parts.length >= 1) parsed.fruta = parts[0].trim();
+      if (parts.length >= 2) parsed.variedad = parts[1].trim();
+      if (parts.length >= 3) parsed.categoria = parts[2].trim();
+    } else if (/^C\d+:\d+/.test(line) || line.includes('|')) {
+      // Línea de calibres: C80:40|C88:8|C100:252
+      parsed.calibresRaw = line;
+      // Extraer calibres disponibles
+      const calibres = [];
+      const matches = line.match(/C(\d+):\d+/g) || [];
+      matches.forEach(m => {
+        const num = m.split(':')[0].replace('C','');
+        // Buscar calibre en catálogo
+        const found = ALL_CALIBRES.find(c => {
+          const cn = c.match(/CALIBRE (\d+)/);
+          return cn && cn[1] === num;
+        });
+        if (found) calibres.push(found);
+        else calibres.push('0' + (400 + parseInt(num)) + ' - CALIBRE ' + num);
+      });
+      parsed.calibresDisponibles = calibres;
+    }
+  });
+
+  if (!parsed.lote && !parsed.importacion && !parsed.variedad) {
+    document.getElementById('qr-status').textContent = '❌ No se reconoció el formato QR. Usa la pestaña "Ingresar texto".';
+    document.getElementById('qr-status').className = 'qr-status err';
+    return;
+  }
+
+  // Mapear a catálogo
+  parsed.proveedorMapped  = buscarEnMapa(parsed.exportador, PROVEEDOR_MAP) || parsed.exportador || '';
+  parsed.variedadMapped   = buscarEnMapa(parsed.variedad, VARIEDAD_MAP) || '';
+  parsed.categoriaMapped  = buscarEnMapa(parsed.categoria, CATEGORIA_MAP) || '';
+  // Para calibre: si hay varios disponibles, dejar vacío para que el usuario elija
+  parsed.calibreMapped = (parsed.calibresDisponibles && parsed.calibresDisponibles.length === 1)
+    ? parsed.calibresDisponibles[0] : '';
+
+  qrParsed = parsed;
+
+  // Mostrar resultado
+  const campos = [
+    { l: 'Importación', v: parsed.importacion },
+    { l: 'Lote', v: parsed.lote },
+    { l: 'Proveedor', v: parsed.proveedorMapped || parsed.exportador },
+    { l: 'Variedad', v: parsed.variedadMapped || parsed.variedad },
+    { l: 'Categoría', v: parsed.categoriaMapped || parsed.categoria },
+    { l: 'Calibre(s)', v: parsed.calibresDisponibles ? parsed.calibresDisponibles.join(', ') : '–' },
+    { l: 'Contenedor', v: parsed.contenedor },
+    { l: 'Total cajas', v: parsed.total },
+  ].filter(c => c.v);
+
+  const html = campos.map(c =>
+    `<div class="qr-field"><span class="qr-label">${c.l}</span><span class="qr-val">${c.v}</span></div>`
+  ).join('');
+
+  document.getElementById('qr-fields').innerHTML = html;
+  document.getElementById('qr-result-box').style.display = 'block';
+  document.getElementById('btn-aplicar-qr').style.display = 'inline-flex';
+  document.getElementById('qr-status').textContent = '✅ QR leído correctamente';
+  document.getElementById('qr-status').className = 'qr-status ok';
+  detenerCamara();
+}
+
+function aplicarQR() {
+  if (!qrParsed) return;
+
+  // Proveedor
+  if (qrParsed.proveedorMapped) {
+    document.getElementById('proveedor').value = qrParsed.proveedorMapped;
+  }
+
+  // Lote
+  if (qrParsed.lote) {
+    document.getElementById('lote').value = qrParsed.lote;
+  }
+
+  // Variedad
+  if (qrParsed.variedadMapped) {
+    document.getElementById('variedad').value = qrParsed.variedadMapped;
+  }
+
+  // Categoría
+  if (qrParsed.categoriaMapped) {
+    document.getElementById('categoria').value = qrParsed.categoriaMapped;
+  }
+
+  // Calibre solo si hay uno único
+  if (qrParsed.calibreMapped) {
+    document.getElementById('calibre').value = qrParsed.calibreMapped;
+    autoCajasXPallet();
+  }
+
+  // Asegurar que estamos en modo catálogo
+  document.getElementById('tipoProd').value = 'catalogo';
+  modoNuevo = false;
+  document.getElementById('wrap-variedad').style.display = '';
+  document.getElementById('wrap-calibre').style.display = '';
+  document.getElementById('wrap-categoria').style.display = '';
+  document.getElementById('wrap-variedad-libre').style.display = 'none';
+  document.getElementById('wrap-calibre-libre').style.display = 'none';
+  document.getElementById('wrap-categoria-libre').style.display = 'none';
+
+  cerrarQR();
+
+  const pendientes = [];
+  if (!qrParsed.variedadMapped) pendientes.push('variedad');
+  if (!qrParsed.calibreMapped || (qrParsed.calibresDisponibles && qrParsed.calibresDisponibles.length > 1)) pendientes.push('calibre');
+  if (!qrParsed.categoriaMapped) pendientes.push('categoría');
+
+  if (pendientes.length > 0) {
+    showToast('⚠️ Completa manualmente: ' + pendientes.join(', '), false);
+  } else {
+    showToast('✅ Datos del QR aplicados al formulario');
+  }
+  document.getElementById('posicion').focus();
+}
+
+document.getElementById('modalQR').addEventListener('click', function(e) {
+  if (e.target === this) cerrarQR();
+});
+
+
+document.getElementById('posicion').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('proveedor').focus();
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</body>
+</html>
